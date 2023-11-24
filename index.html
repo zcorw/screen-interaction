@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    .frame {
+      width: 100%;
+      height: 100%;
+      #app {
+        position: fixed;
+        width: 100px;
+        height: 100px;
+        top: calc(50% - 50px);
+        left: calc(50% - 50px);
+        background-color: red;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <div id="app"></div>
+    <button id="add">打开滤镜</button>
+  </div>
+  <script>
+    document.getElementById("add").addEventListener("click", () => {
+      const windowFeatures = "left=100,top=100,width=320,height=320";
+      const handle = window.open(
+        "index.html#child",
+        "_blank",
+        windowFeatures,
+      );
+    })
+    let fatherWindow = true;
+    if (window.location.hash === "#child") {
+      document.getElementById("add").style = "display:none";
+      // document.getElementById("app").style = "display:none";
+      fatherWindow = false;
+    }
+    const bc = new BroadcastChannel("position_channel");
+    function fatherBlockScreenPosition() {
+      const screenOffsetLeft = Math.abs(window.screen.availLeft - window.screenLeft);
+      const screenOffsetTop = Math.abs(window.screen.availTop - window.screenTop);
+      const windowOffsetLeft = document.getElementById("app").offsetLeft;
+      const windowOffsetTop = (window.outerHeight - window.innerHeight) + document.getElementById("app").offsetTop;
+      return {
+        top: screenOffsetTop + windowOffsetTop,
+        left: screenOffsetLeft + windowOffsetLeft,
+      }
+    }
+    function windowPosition() {
+      const screenOffsetLeft = Math.abs(window.screen.availLeft - window.screenLeft);
+      const screenOffsetTop = Math.abs(window.screen.availTop - window.screenTop) + (window.outerHeight - window.innerHeight);
+      return {
+        top: screenOffsetTop,
+        left: screenOffsetLeft,
+      }
+    }
+    if (fatherWindow) {
+      setInterval(() => {
+        bc.postMessage(fatherBlockScreenPosition())
+      }, 30);
+    } else {
+      bc.onmessage = (event) => {
+        const wp = windowPosition();
+        document.getElementById("app").style = "left:" + (event.data.left - wp.left) + "px;top:" + (event.data.top - wp.top) + "px";
+      }
+    }
+  </script>
+
+</body>
+</html>
